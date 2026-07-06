@@ -426,18 +426,31 @@ export function App() {
     }
   }, [loadReviewedRecords, view]);
 
-  const switchQueue = async (nextQueue: QueueName) => {
+  useEffect(() => {
+    if (!authUser || view !== "review") return;
+    void loadNext(queue);
+  }, [authUser, loadNext, queue, view]);
+
+  const switchQueue = (nextQueue: QueueName) => {
+    loadNextRequestRef.current += 1;
     setView("review");
     setQueue(nextQueue);
-    await loadNext(nextQueue);
+    setLoading(true);
+    setResponse(null);
+    setCandidates([]);
+    setSelectedChildId("");
+    setSearchQuery("");
+    setSearchResults([]);
+    setMessage("");
+    if (view === "review" && nextQueue === queue) {
+      void loadNext(nextQueue);
+    }
   };
 
   const switchView = async (nextView: ViewName) => {
     setView(nextView);
     setMessage("");
-    if (nextView === "review") {
-      await loadNext(queue);
-    } else if (nextView === "matches") {
+    if (nextView === "matches") {
       await refreshStats();
       await loadReviewedRecords();
     } else if (["pupils", "responses", "schools", "quality", "audit"].includes(nextView)) {

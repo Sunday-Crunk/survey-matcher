@@ -73,3 +73,18 @@ Docker is used instead of Render's plain Node runtime because the app still call
 7. Run verification. The migration script fails if table counts differ.
 8. Deploy/start the hosted service.
 9. Log in with the bootstrap admin account.
+
+## Add Hosted Users
+
+Create or reset a user directly in the hosted Postgres database:
+
+```powershell
+cd matcher-app
+$env:DATABASE_URL = "postgresql://render-external-url?sslmode=require"
+$env:APP_USERNAME = "melisa"
+$env:APP_DISPLAY_NAME = "Melisa"
+$env:APP_PASSWORD = "replace-with-password"
+npm run hosted:create-user
+```
+
+The script stores a `scrypt` password hash and re-enables the account if it already exists.

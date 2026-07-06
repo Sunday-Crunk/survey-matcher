@@ -23,6 +23,7 @@
     "migration:docker:apply": "docker compose -f docker-compose.migration.yml exec -T postgres psql -U matcher -d matcher_migration -v ON_ERROR_STOP=1 -f /migration-output/web-data-preflight/apply.sql",
     "migration:docker:verify": "docker compose -f docker-compose.migration.yml exec -T postgres psql -U matcher -d matcher_migration -f /migration-output/web-data-preflight/verify.sql",
     "migration:docker:down": "docker compose -f docker-compose.migration.yml down -v",
+    "hosted:create-user": "node scripts/create-hosted-user.mjs",
     "start": "electron .",
     "package": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder"
