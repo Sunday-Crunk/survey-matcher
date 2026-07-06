@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 export function ReviewView({
   queue,
   stats,
+  loading,
   response,
   candidates,
   selectedChildId,
@@ -36,6 +37,7 @@ export function ReviewView({
 }: {
   queue: QueueName;
   stats: Stats;
+  loading: boolean;
   response: SurveyResponse | null;
   candidates: Candidate[];
   selectedChildId: string;
@@ -61,7 +63,9 @@ export function ReviewView({
     <div className="grid min-h-0 flex-1 overflow-auto lg:overflow-hidden lg:grid-cols-[minmax(0,1fr)_360px]">
       <section className="min-w-0 overflow-auto p-4">
         <ReviewQueueSwitcher queue={queue} stats={stats} onQueueChange={onQueueChange} />
-        {!response ? (
+        {loading ? (
+          <LoadingQueue queue={queue} />
+        ) : !response ? (
           <EmptyQueue queue={queue} onDeferred={() => onQueueChange("deferred")} />
         ) : (
           <>
@@ -447,6 +451,15 @@ function EmptyQueue({ queue, onDeferred }: { queue: QueueName; onDeferred: () =>
           <ChevronDown size={16} /> Open deferred
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function LoadingQueue({ queue }: { queue: QueueName }) {
+  return (
+    <div className="rounded-md border border-line bg-panel p-8 text-[14px]">
+      <div className="font-semibold">Loading {queueLabel(queue).toLowerCase()}.</div>
+      <div className="mt-2 max-w-[520px] text-muted">Fetching the next response and generated candidates.</div>
     </div>
   );
 }

@@ -138,6 +138,7 @@ export function App() {
   const [exportResult, setExportResult] = useState<ExportCsvResult | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const loadNextRequestRef = useRef(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -204,12 +205,16 @@ export function App() {
 
   const loadNext = useCallback(
     async (targetQueue = queue) => {
+      const requestId = loadNextRequestRef.current + 1;
+      loadNextRequestRef.current = requestId;
       setLoading(true);
       setMessage("");
       const next = await matcher.getNextResponse(targetQueue);
+      if (requestId !== loadNextRequestRef.current) return;
       setResponse(next);
       if (next) {
         const nextCandidates = await matcher.getCandidates(next.response_id);
+        if (requestId !== loadNextRequestRef.current) return;
         setCandidates(nextCandidates);
         const preselected = nextCandidates.find((candidate) => candidate.preselected === "true");
         setSelectedChildId(preselected?.roster_child_id ?? nextCandidates[0]?.roster_child_id ?? "");
@@ -220,6 +225,7 @@ export function App() {
       setSearchQuery("");
       setSearchResults([]);
       await refreshStats();
+      if (requestId !== loadNextRequestRef.current) return;
       setLoading(false);
     },
     [matcher, queue, refreshStats]
@@ -429,7 +435,9 @@ export function App() {
   const switchView = async (nextView: ViewName) => {
     setView(nextView);
     setMessage("");
-    if (nextView === "matches") {
+    if (nextView === "review") {
+      await loadNext(queue);
+    } else if (nextView === "matches") {
       await refreshStats();
       await loadReviewedRecords();
     } else if (["pupils", "responses", "schools", "quality", "audit"].includes(nextView)) {
@@ -741,6 +749,7 @@ export function App() {
           <ReviewView
             queue={queue}
             stats={stats}
+            loading={loading}
             response={response}
             candidates={candidates}
             selectedChildId={selectedChildId}
