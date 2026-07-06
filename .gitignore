@@ -1,0 +1,49 @@
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Dependency folders
+node_modules/
+matcher-app/node_modules/
+
+# Build and release output
+dist/
+dist-server/
+dist-electron/
+matcher-app/dist/
+matcher-app/dist-server/
+matcher-app/dist-electron/
+matcher-app/dist-design-pass-*/
+matcher-app/release/
+matcher-app/release-output-backup*/
+matcher-app/dev-api-server/
+matcher-app/dev-auth-smoke/
+matcher-app/dev-auth-smoke-data-*/
+matcher-app/dev-server-tmp/
+matcher-app/promotion-backups/
+
+# Runtime data and generated migration output
+outputs/
+matcher-app/web-data/
+matcher-app/dev-data/
+matcher-app/seed-outputs/
+matcher-app/migration-output/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Private source files
+school files.zip
+survey data.zip
+ai structure help.docx
+
+# Logs and temporary files
+*.log
+*.pid
+*.tmp
+*.bak
+__pycache__/
+.pytest_cache/
+.DS_Store
+Thumbs.db

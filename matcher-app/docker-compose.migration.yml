@@ -1,0 +1,20 @@
+name: matcher-postgres-migration
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: matcher_migration
+      POSTGRES_USER: matcher
+      POSTGRES_PASSWORD: matcher_migration
+    volumes:
+      - matcher-postgres-migration-data:/var/lib/postgresql/data
+      - ./migration-output:/migration-output:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matcher -d matcher_migration"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  matcher-postgres-migration-data:

@@ -1,0 +1,40 @@
+# Render Blueprint for the hosted survey matcher.
+#
+# Render runs the Postgres runtime entrypoint built by `npm run build:hosted`.
+
+services:
+  - type: web
+    name: survey-roster-matcher
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON
+        value: python3
+      - key: DATABASE_URL
+        fromDatabase:
+          name: survey-roster-matcher-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: MATCHER_BOOTSTRAP_USERNAME
+        value: admin
+      - key: MATCHER_BOOTSTRAP_DISPLAY_NAME
+        value: Admin
+      - key: MATCHER_BOOTSTRAP_PASSWORD
+        sync: false
+
+databases:
+  - name: survey-roster-matcher-db
+    region: frankfurt
+    plan: basic-256mb
+    databaseName: survey_roster_matcher
+    user: survey_roster_matcher
+    postgresMajorVersion: "18"
+    connectionPool: none
