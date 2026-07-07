@@ -1,14 +1,23 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { PupilRecord, RosterSchool } from "@/types";
+import type { PupilRecord, ResponseDetailData, RosterSchool } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ResponseAnswerPanel } from "./ResponseAnswerPanel";
 import { compactDate, includesText } from "./workbenchUtils";
 
-export function PupilsView({ pupils, schools }: { pupils: PupilRecord[]; schools: RosterSchool[] }) {
+export function PupilsView({
+  pupils,
+  schools,
+  onLoadResponseDetail
+}: {
+  pupils: PupilRecord[];
+  schools: RosterSchool[];
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
+}) {
   const [query, setQuery] = useState("");
   const [school, setSchool] = useState("all");
   const [status, setStatus] = useState("all");
@@ -23,7 +32,7 @@ export function PupilsView({ pupils, schools }: { pupils: PupilRecord[]; schools
       }),
     [pupils, query, school, status]
   );
-  const selected = pupils.find((pupil) => pupil.roster_child_id === selectedId) ?? filtered[0] ?? null;
+  const selected = filtered.find((pupil) => pupil.roster_child_id === selectedId) ?? filtered[0] ?? null;
 
   return (
     <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] overflow-hidden p-4">
@@ -70,8 +79,15 @@ export function PupilsView({ pupils, schools }: { pupils: PupilRecord[]; schools
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((pupil) => (
-                <TableRow key={pupil.roster_child_id} className="cursor-pointer" onClick={() => setSelectedId(pupil.roster_child_id)}>
+              {filtered.map((pupil) => {
+                const selectedRow = pupil.roster_child_id === selected?.roster_child_id;
+                return (
+                <TableRow
+                  key={pupil.roster_child_id}
+                  data-state={selectedRow ? "selected" : undefined}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedId(pupil.roster_child_id)}
+                >
                   <TableCell className="font-medium">{pupil.forename_raw} {pupil.surname_raw}</TableCell>
                   <TableCell>{pupil.school_raw}</TableCell>
                   <TableCell>{pupil.dob_iso || "Missing"}</TableCell>
@@ -79,12 +95,13 @@ export function PupilsView({ pupils, schools }: { pupils: PupilRecord[]; schools
                   <TableCell className="font-mono text-[12px]">{pupil.matched_response_id || ""}</TableCell>
                   <TableCell className="text-right">{pupil.candidate_count}</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-      <PupilDetail pupil={selected} />
+      <PupilDetail pupil={selected} onLoadResponseDetail={onLoadResponseDetail} />
     </section>
   );
 }
@@ -93,21 +110,32 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant={status === "matched" ? "secondary" : "outline"}>{status}</Badge>;
 }
 
-function PupilDetail({ pupil }: { pupil: PupilRecord | null }) {
+function PupilDetail({
+  pupil,
+  onLoadResponseDetail
+}: {
+  pupil: PupilRecord | null;
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
+}) {
   return (
-    <aside className="ml-4 min-h-0 overflow-auto rounded-md border border-line bg-panel p-4 text-[13px]">
-      <div className="text-[15px] font-semibold">{pupil ? `${pupil.forename_raw} ${pupil.surname_raw}` : "No pupil selected"}</div>
-      {pupil ? (
-        <div className="mt-4 space-y-3">
-          <Detail label="School" value={pupil.school_raw} />
-          <Detail label="DOB" value={pupil.dob_iso || "Missing"} />
-          <Detail label="Status" value={pupil.status} />
-          <Detail label="Matched response" value={pupil.matched_response_id || "Not matched"} />
-          <Detail label="Matched at" value={compactDate(pupil.matched_at)} />
-          <Detail label="Roster source" value={`${pupil.roster_file} row ${pupil.source_row}`} />
-          <Detail label="Candidate references" value={String(pupil.candidate_count)} />
-        </div>
-      ) : null}
+    <aside className="ml-4 flex min-h-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-[13px]">
+      <div className="border-b border-line p-4">
+        <div className="text-[15px] font-semibold">{pupil ? `${pupil.forename_raw} ${pupil.surname_raw}` : "No pupil selected"}</div>
+      </div>
+      <div className="min-h-0 overflow-auto p-4">
+        {pupil ? (
+          <div className="space-y-3">
+            <Detail label="School" value={pupil.school_raw} />
+            <Detail label="DOB" value={pupil.dob_iso || "Missing"} />
+            <Detail label="Status" value={pupil.status} />
+            <Detail label="Matched response" value={pupil.matched_response_id || "Not matched"} />
+            <Detail label="Matched at" value={compactDate(pupil.matched_at)} />
+            <Detail label="Roster source" value={`${pupil.roster_file} row ${pupil.source_row}`} />
+            <Detail label="Candidate references" value={String(pupil.candidate_count)} />
+          </div>
+        ) : null}
+        <ResponseAnswerPanel responseId={pupil?.matched_response_id} onLoadResponseDetail={onLoadResponseDetail} />
+      </div>
     </aside>
   );
 }

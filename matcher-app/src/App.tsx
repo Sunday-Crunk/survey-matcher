@@ -31,6 +31,7 @@ import type {
   ReviewedRecord,
   RosterSchool,
   RosterSearchResult,
+  ResponseDetailData,
   ResponseRecord,
   SchoolSummary,
   Stats,
@@ -162,6 +163,11 @@ export function App() {
   const loadSchools = useCallback(async () => {
     setSchools(await matcher.getSchools());
   }, [matcher]);
+
+  const loadResponseDetail = useCallback(
+    (responseId: string): Promise<ResponseDetailData | null> => matcher.getResponseDetail(responseId),
+    [matcher]
+  );
 
   const loadReviewedRecords = useCallback(async () => {
     setReviewedLoading(true);
@@ -797,12 +803,13 @@ export function App() {
             onSearchChange={setMatchSearch}
             onStatusChange={setMatchStatus}
             onSortChange={setMatchSort}
+            onLoadResponseDetail={loadResponseDetail}
             onUndoDecision={undoDecision}
           />
         ) : view === "pupils" ? (
-          workbenchLoading ? <WorkbenchLoading label="Loading pupils" /> : <PupilsView pupils={pupils} schools={schools} />
+          workbenchLoading ? <WorkbenchLoading label="Loading pupils" /> : <PupilsView pupils={pupils} schools={schools} onLoadResponseDetail={loadResponseDetail} />
         ) : view === "responses" ? (
-          workbenchLoading ? <WorkbenchLoading label="Loading responses" /> : <ResponsesView responses={responses} schools={schools} />
+          workbenchLoading ? <WorkbenchLoading label="Loading responses" /> : <ResponsesView responses={responses} schools={schools} onLoadResponseDetail={loadResponseDetail} />
         ) : view === "schools" ? (
           workbenchLoading ? <WorkbenchLoading label="Loading schools" /> : <SchoolsView schools={schoolSummaries} />
         ) : view === "quality" ? (

@@ -79,6 +79,7 @@ export function createMatcherApi(): MatcherApi {
     getReviewedRecords: () => requestJson("reviewed-records"),
     getPupils: () => requestJson("pupils"),
     getResponses: () => requestJson("responses"),
+    getResponseDetail: (responseId: string) => requestJson(`response-detail?responseId=${encodeURIComponent(responseId)}`),
     getSchoolSummaries: () => requestJson("school-summaries"),
     getDataQualityIssues: () => requestJson("data-quality"),
     getAuditEvents: () => requestJson("audit-events"),

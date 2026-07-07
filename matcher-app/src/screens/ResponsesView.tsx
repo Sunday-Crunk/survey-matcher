@@ -1,14 +1,23 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { ResponseRecord, RosterSchool } from "@/types";
+import type { ResponseDetailData, ResponseRecord, RosterSchool } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ResponseAnswerPanel } from "./ResponseAnswerPanel";
 import { compactDate, includesText } from "./workbenchUtils";
 
-export function ResponsesView({ responses, schools }: { responses: ResponseRecord[]; schools: RosterSchool[] }) {
+export function ResponsesView({
+  responses,
+  schools,
+  onLoadResponseDetail
+}: {
+  responses: ResponseRecord[];
+  schools: RosterSchool[];
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
+}) {
   const [query, setQuery] = useState("");
   const [school, setSchool] = useState("all");
   const [status, setStatus] = useState("all");
@@ -23,7 +32,7 @@ export function ResponsesView({ responses, schools }: { responses: ResponseRecor
       }),
     [query, responses, school, status]
   );
-  const selected = responses.find((response) => response.response_id === selectedId) ?? filtered[0] ?? null;
+  const selected = filtered.find((response) => response.response_id === selectedId) ?? filtered[0] ?? null;
 
   return (
     <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] overflow-hidden p-4">
@@ -75,8 +84,15 @@ export function ResponsesView({ responses, schools }: { responses: ResponseRecor
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((response) => (
-                <TableRow key={response.response_id} className="cursor-pointer" onClick={() => setSelectedId(response.response_id)}>
+              {filtered.map((response) => {
+                const selectedRow = response.response_id === selected?.response_id;
+                return (
+                <TableRow
+                  key={response.response_id}
+                  data-state={selectedRow ? "selected" : undefined}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedId(response.response_id)}
+                >
                   <TableCell className="font-mono text-[12px]">{response.response_id}</TableCell>
                   <TableCell className="font-medium">{response.entered_forename_raw || "Blank"}</TableCell>
                   <TableCell>{response.entered_school_raw || "Blank"}</TableCell>
@@ -85,34 +101,46 @@ export function ResponsesView({ responses, schools }: { responses: ResponseRecor
                   <TableCell>{response.top_confidence}</TableCell>
                   <TableCell className="text-right">{response.progress}%</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-      <ResponseDetail response={selected} />
+      <ResponseDetail response={selected} onLoadResponseDetail={onLoadResponseDetail} />
     </section>
   );
 }
 
-function ResponseDetail({ response }: { response: ResponseRecord | null }) {
+function ResponseDetail({
+  response,
+  onLoadResponseDetail
+}: {
+  response: ResponseRecord | null;
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
+}) {
   return (
-    <aside className="ml-4 min-h-0 overflow-auto rounded-md border border-line bg-panel p-4 text-[13px]">
-      <div className="text-[15px] font-semibold">{response ? response.entered_forename_raw || response.response_id : "No response selected"}</div>
-      {response ? (
-        <div className="mt-4 space-y-3">
-          <Detail label="Response ID" value={response.response_id} />
-          <Detail label="Status" value={response.status.replace("_", " ")} />
-          <Detail label="Entered school" value={response.entered_school_raw || "Blank"} />
-          <Detail label="Birth month/year" value={response.birth_month_year || "Missing"} />
-          <Detail label="Recorded" value={response.recorded_date_raw} />
-          <Detail label="Progress" value={`${response.progress}%`} />
-          <Detail label="Response class" value={response.response_class.replaceAll("_", " ")} />
-          <Detail label="Candidates" value={`${response.candidate_count} generated, top ${response.top_confidence}`} />
-          <Detail label="Roster link" value={response.roster_child_id ? `${response.roster_forename ?? ""} ${response.roster_surname ?? ""}`.trim() : "None"} />
-          <Detail label="Decided at" value={compactDate(response.decided_at)} />
-        </div>
-      ) : null}
+    <aside className="ml-4 flex min-h-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-[13px]">
+      <div className="border-b border-line p-4">
+        <div className="text-[15px] font-semibold">{response ? response.entered_forename_raw || response.response_id : "No response selected"}</div>
+      </div>
+      <div className="min-h-0 overflow-auto p-4">
+        {response ? (
+          <div className="space-y-3">
+            <Detail label="Response ID" value={response.response_id} />
+            <Detail label="Status" value={response.status.replace("_", " ")} />
+            <Detail label="Entered school" value={response.entered_school_raw || "Blank"} />
+            <Detail label="Birth month/year" value={response.birth_month_year || "Missing"} />
+            <Detail label="Recorded" value={response.recorded_date_raw} />
+            <Detail label="Progress" value={`${response.progress}%`} />
+            <Detail label="Response class" value={response.response_class.replaceAll("_", " ")} />
+            <Detail label="Candidates" value={`${response.candidate_count} generated, top ${response.top_confidence}`} />
+            <Detail label="Roster link" value={response.roster_child_id ? `${response.roster_forename ?? ""} ${response.roster_surname ?? ""}`.trim() : "None"} />
+            <Detail label="Decided at" value={compactDate(response.decided_at)} />
+          </div>
+        ) : null}
+        <ResponseAnswerPanel responseId={response?.response_id} onLoadResponseDetail={onLoadResponseDetail} />
+      </div>
     </aside>
   );
 }

@@ -103,6 +103,16 @@ export type ResponseRecord = SurveyResponse & {
   roster_school: string | null;
 };
 
+export type ResponseAnswerField = {
+  field: string;
+  value: string;
+};
+
+export type ResponseDetailData = {
+  response_id: string;
+  fields: ResponseAnswerField[];
+};
+
 export type SchoolSummary = {
   school_raw: string;
   roster_count: number;
@@ -252,6 +262,7 @@ export type MatcherApi = {
   getReviewedRecords: () => Promise<ReviewedRecord[]>;
   getPupils: () => Promise<PupilRecord[]>;
   getResponses: () => Promise<ResponseRecord[]>;
+  getResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
   getSchoolSummaries: () => Promise<SchoolSummary[]>;
   getDataQualityIssues: () => Promise<DataQualityIssue[]>;
   getAuditEvents: () => Promise<AuditEvent[]>;

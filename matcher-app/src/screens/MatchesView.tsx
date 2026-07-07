@@ -1,5 +1,6 @@
 import { ArrowDownUp, CheckCircle2, Search, Undo2 } from "lucide-react";
-import type { DecisionAction, ReviewedRecord, Stats } from "@/types";
+import { useMemo, useState } from "react";
+import type { DecisionAction, ResponseDetailData, ReviewedRecord, Stats } from "@/types";
 import type { MatchSortKey, MatchStatusFilter, SortDirection } from "@/app/types";
 import { actionLabel, prettyConfidence, reviewedPupilName } from "@/app/matchUtils";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,8 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+import { ResponseAnswerPanel } from "./ResponseAnswerPanel";
+import { compactDate } from "./workbenchUtils";
 
 export function MatchesView({
   records,
@@ -27,6 +30,7 @@ export function MatchesView({
   onSearchChange,
   onStatusChange,
   onSortChange,
+  onLoadResponseDetail,
   onUndoDecision
 }: {
   records: ReviewedRecord[];
@@ -40,10 +44,17 @@ export function MatchesView({
   onSearchChange: (value: string) => void;
   onStatusChange: (value: MatchStatusFilter) => void;
   onSortChange: (value: MatchSortKey) => void;
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
   onUndoDecision: (decisionId: number) => void;
 }) {
+  const [selectedDecisionId, setSelectedDecisionId] = useState<number | null>(null);
+  const selectedRecord = useMemo(
+    () => records.find((record) => record.decision_id === selectedDecisionId) ?? records[0] ?? null,
+    [records, selectedDecisionId]
+  );
+
   return (
-    <section className="min-h-0 flex-1 overflow-hidden p-4">
+    <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] overflow-hidden p-4">
       <Card className="h-full gap-0 py-0">
         <CardHeader className="border-b border-border py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -109,7 +120,15 @@ export function MatchesView({
                   <TableCell className="px-4 py-8 text-center text-muted" colSpan={9}>Loading reviewed records.</TableCell>
                 </TableRow>
               ) : records.length ? (
-                records.map((record) => <ReviewedRecordRow key={record.decision_id} record={record} onUndoDecision={onUndoDecision} />)
+                records.map((record) => (
+                  <ReviewedRecordRow
+                    key={record.decision_id}
+                    record={record}
+                    selected={record.decision_id === selectedRecord?.decision_id}
+                    onSelect={() => setSelectedDecisionId(record.decision_id)}
+                    onUndoDecision={onUndoDecision}
+                  />
+                ))
               ) : (
                 <TableRow>
                   <TableCell className="px-4 py-8 text-center text-muted" colSpan={9}>No records match the current filter.</TableCell>
@@ -119,6 +138,7 @@ export function MatchesView({
           </Table>
         </CardContent>
       </Card>
+      <MatchDetail record={selectedRecord} onLoadResponseDetail={onLoadResponseDetail} />
     </section>
   );
 }
@@ -162,12 +182,22 @@ function SortableTh({
   );
 }
 
-function ReviewedRecordRow({ record, onUndoDecision }: { record: ReviewedRecord; onUndoDecision: (decisionId: number) => void }) {
+function ReviewedRecordRow({
+  record,
+  selected,
+  onSelect,
+  onUndoDecision
+}: {
+  record: ReviewedRecord;
+  selected: boolean;
+  onSelect: () => void;
+  onUndoDecision: (decisionId: number) => void;
+}) {
   const pupilName = reviewedPupilName(record);
   const score = record.accepted_score === null || record.accepted_score === undefined ? "" : Number(record.accepted_score).toFixed(1);
   const confidence = record.accepted_confidence || record.top_confidence || "";
   return (
-    <TableRow className="group align-top">
+    <TableRow data-state={selected ? "selected" : undefined} className="group cursor-pointer align-top" onClick={onSelect}>
       <TableCell className="px-3 py-3">
         <DecisionStatus action={record.action} />
       </TableCell>
@@ -196,12 +226,59 @@ function ReviewedRecordRow({ record, onUndoDecision }: { record: ReviewedRecord;
         <div>{record.decided_at.replace("T", " ").slice(0, 19)}</div>
         <div className="mt-1 text-[12px] text-muted">survey {record.recorded_date_raw}</div>
       </TableCell>
-      <TableCell className="sticky right-0 border-l border-border bg-card px-3 py-3 group-hover:bg-muted/50">
-        <Button variant="outline" size="sm" onClick={() => onUndoDecision(record.decision_id)}>
+      <TableCell className={`sticky right-0 border-l border-border px-3 py-3 ${selected ? "bg-muted" : "bg-card group-hover:bg-muted/50"}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onUndoDecision(record.decision_id);
+          }}
+        >
           <Undo2 size={14} /> Reopen
         </Button>
       </TableCell>
     </TableRow>
+  );
+}
+
+function MatchDetail({
+  record,
+  onLoadResponseDetail
+}: {
+  record: ReviewedRecord | null;
+  onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
+}) {
+  const pupilName = record ? reviewedPupilName(record) : "";
+  return (
+    <aside className="ml-4 flex min-h-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-[13px]">
+      <div className="border-b border-line p-4">
+        <div className="text-[15px] font-semibold">{record ? pupilName || record.response_id : "No decision selected"}</div>
+      </div>
+      <div className="min-h-0 overflow-auto p-4">
+        {record ? (
+          <div className="space-y-3">
+            <Detail label="Status" value={actionLabel(record.action)} />
+            <Detail label="Response ID" value={record.response_id} />
+            <Detail label="Survey entry" value={`${record.entered_forename_raw || "Blank"} at ${record.entered_school_raw || "Blank school"}`} />
+            <Detail label="Birth month/year" value={record.birth_month_year || "Missing"} />
+            <Detail label="Roster link" value={pupilName || "None"} />
+            <Detail label="Roster school" value={record.roster_school || "None"} />
+            <Detail label="Decided at" value={compactDate(record.decided_at)} />
+          </div>
+        ) : null}
+        <ResponseAnswerPanel responseId={record?.response_id} onLoadResponseDetail={onLoadResponseDetail} />
+      </div>
+    </aside>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[12px] text-muted">{label}</div>
+      <div className="mt-0.5 break-words font-medium">{value || ""}</div>
+    </div>
   );
 }
 

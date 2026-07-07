@@ -66,6 +66,31 @@ const processedSurveyColumns = new Set([
   "missing_answer_count_vs_canonical",
   "extra_answer_count_vs_canonical"
 ]);
+const hiddenAnswerFields = new Set([
+  "StartDate",
+  "EndDate",
+  "Status",
+  "IPAddress",
+  "Progress",
+  "Duration (in seconds)",
+  "Finished",
+  "RecordedDate",
+  "ResponseId",
+  "RecipientLastName",
+  "RecipientFirstName",
+  "RecipientEmail",
+  "ExternalReference",
+  "LocationLatitude",
+  "LocationLongitude",
+  "DistributionChannel",
+  "UserLanguage",
+  "Q_DuplicateRespondent",
+  "Consent",
+  "Name",
+  "School name",
+  "DOB_1",
+  "DOB_2"
+]);
 
 let SQL: SqlJsStatic | null = null;
 let db: Database | null = null;
@@ -816,6 +841,32 @@ function getResponses() {
      LEFT JOIN roster_children r ON r.roster_child_id = d.roster_child_id
      ORDER BY s.recorded_date_raw DESC, s.survey_row_index DESC, s.response_id`
   );
+}
+
+function getResponseDetail(responseId: string) {
+  if (!responseId) throw new ApiError(400, "Response ID is required.");
+  const row = one<{ response_id: string; raw_json: string | null }>(
+    getDb(),
+    `SELECT s.response_id, f.raw_json
+     FROM survey_responses s
+     LEFT JOIN survey_response_full_rows f ON f.response_id = s.response_id
+     WHERE s.response_id = ?`,
+    [responseId]
+  );
+  if (!row) throw new ApiError(404, "Response was not found.");
+
+  const fullRow = parseFullSurveyRow(row.raw_json);
+  const fields = Object.entries(fullRow)
+    .filter(([field, value]) => {
+      const text = String(value ?? "").trim();
+      return text && !processedSurveyColumns.has(field) && !hiddenAnswerFields.has(field);
+    })
+    .map(([field, value]) => ({ field, value: String(value ?? "") }));
+
+  return {
+    response_id: row.response_id,
+    fields
+  };
 }
 
 function getSchoolSummaries() {
@@ -1840,6 +1891,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
   if (request.method === "GET" && route === "reviewed-records") return sendJson(response, 200, getReviewedRecords());
   if (request.method === "GET" && route === "pupils") return sendJson(response, 200, getPupils());
   if (request.method === "GET" && route === "responses") return sendJson(response, 200, getResponses());
+  if (request.method === "GET" && route === "response-detail") return sendJson(response, 200, getResponseDetail(requestUrl.searchParams.get("responseId") ?? ""));
   if (request.method === "GET" && route === "school-summaries") return sendJson(response, 200, getSchoolSummaries());
   if (request.method === "GET" && route === "data-quality") return sendJson(response, 200, getDataQualityIssues());
   if (request.method === "GET" && route === "audit-events") return sendJson(response, 200, getAuditEvents());
