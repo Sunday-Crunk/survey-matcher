@@ -1,4 +1,4 @@
-import { ArrowDownUp, CheckCircle2, Search, Undo2 } from "lucide-react";
+import { ArrowDownUp, CheckCircle2, Search, Undo2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DecisionAction, ResponseDetailData, ReviewedRecord, Stats } from "@/types";
 import type { MatchSortKey, MatchStatusFilter, SortDirection } from "@/app/types";
@@ -48,13 +48,14 @@ export function MatchesView({
   onUndoDecision: (decisionId: number) => void;
 }) {
   const [selectedDecisionId, setSelectedDecisionId] = useState<number | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(true);
   const selectedRecord = useMemo(
     () => records.find((record) => record.decision_id === selectedDecisionId) ?? records[0] ?? null,
     [records, selectedDecisionId]
   );
 
   return (
-    <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] overflow-hidden p-4">
+    <section className={`grid min-h-0 flex-1 overflow-hidden p-4 ${detailsOpen ? "grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`}>
       <Card className="h-full gap-0 py-0">
         <CardHeader className="border-b border-border py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -89,17 +90,17 @@ export function MatchesView({
         </CardHeader>
 
         <CardContent className="min-h-0 flex-1 overflow-auto p-0">
-          <Table className="min-w-[1120px] table-fixed text-[13px]">
+          <Table className="min-w-[1240px] table-fixed text-[13px]">
             <colgroup>
-              <col className="w-[90px]" />
+              <col className="w-[112px]" />
               <col className="w-[160px]" />
-              <col className="w-[185px]" />
-              <col className="w-[210px]" />
-              <col className="w-[86px]" />
-              <col className="w-[72px]" />
-              <col className="w-[74px]" />
-              <col className="w-[153px]" />
+              <col className="w-[200px]" />
+              <col className="w-[220px]" />
               <col className="w-[90px]" />
+              <col className="w-[82px]" />
+              <col className="w-[86px]" />
+              <col className="w-[195px]" />
+              <col className="w-[58px]" />
             </colgroup>
             <TableHeader className="sticky top-0 z-10 bg-mutedSurface text-[12px] text-muted">
               <TableRow>
@@ -111,7 +112,7 @@ export function MatchesView({
                 <SortableTh label="Progress" sortKey="progress" activeSortKey={sortKey} direction={sortDirection} onSort={onSortChange} />
                 <SortableTh label="Score" sortKey="score" activeSortKey={sortKey} direction={sortDirection} onSort={onSortChange} />
                 <SortableTh label="Decision" sortKey="decided_at" activeSortKey={sortKey} direction={sortDirection} onSort={onSortChange} />
-                <TableHead className="sticky right-0 w-[92px] border-l border-border bg-mutedSurface px-3 py-2">Action</TableHead>
+                <TableHead className="sticky right-0 w-[58px] border-l border-border bg-mutedSurface px-2 py-2 text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -125,7 +126,10 @@ export function MatchesView({
                     key={record.decision_id}
                     record={record}
                     selected={record.decision_id === selectedRecord?.decision_id}
-                    onSelect={() => setSelectedDecisionId(record.decision_id)}
+                    onSelect={() => {
+                      setSelectedDecisionId(record.decision_id);
+                      setDetailsOpen(true);
+                    }}
                     onUndoDecision={onUndoDecision}
                   />
                 ))
@@ -138,7 +142,13 @@ export function MatchesView({
           </Table>
         </CardContent>
       </Card>
-      <MatchDetail record={selectedRecord} onLoadResponseDetail={onLoadResponseDetail} />
+      {detailsOpen ? (
+        <MatchDetail
+          record={selectedRecord}
+          onClose={() => setDetailsOpen(false)}
+          onLoadResponseDetail={onLoadResponseDetail}
+        />
+      ) : null}
     </section>
   );
 }
@@ -226,16 +236,18 @@ function ReviewedRecordRow({
         <div>{record.decided_at.replace("T", " ").slice(0, 19)}</div>
         <div className="mt-1 text-[12px] text-muted">survey {record.recorded_date_raw}</div>
       </TableCell>
-      <TableCell className={`sticky right-0 border-l border-border px-3 py-3 ${selected ? "bg-muted" : "bg-card group-hover:bg-muted/50"}`}>
+      <TableCell className={`sticky right-0 border-l border-border px-2 py-3 text-center ${selected ? "bg-[var(--table-selected)] group-hover:bg-[var(--table-selected-hover)]" : "bg-card group-hover:bg-[var(--table-hover)]"}`}>
         <Button
           variant="outline"
-          size="sm"
+          size="icon-sm"
+          aria-label="Reopen decision"
+          title="Reopen decision"
           onClick={(event) => {
             event.stopPropagation();
             onUndoDecision(record.decision_id);
           }}
         >
-          <Undo2 size={14} /> Reopen
+          <Undo2 size={14} />
         </Button>
       </TableCell>
     </TableRow>
@@ -244,16 +256,21 @@ function ReviewedRecordRow({
 
 function MatchDetail({
   record,
+  onClose,
   onLoadResponseDetail
 }: {
   record: ReviewedRecord | null;
+  onClose: () => void;
   onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
 }) {
   const pupilName = record ? reviewedPupilName(record) : "";
   return (
     <aside className="ml-4 flex min-h-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-[13px]">
-      <div className="border-b border-line p-4">
-        <div className="text-[15px] font-semibold">{record ? pupilName || record.response_id : "No decision selected"}</div>
+      <div className="flex items-center justify-between gap-3 border-b border-line p-4">
+        <div className="min-w-0 truncate text-[15px] font-semibold">{record ? pupilName || record.response_id : "No decision selected"}</div>
+        <Button variant="ghost" size="icon-sm" aria-label="Close details" title="Close details" onClick={onClose}>
+          <X size={15} />
+        </Button>
       </div>
       <div className="min-h-0 overflow-auto p-4">
         {record ? (

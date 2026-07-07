@@ -1,7 +1,8 @@
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ResponseDetailData, ResponseRecord, RosterSchool } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +23,7 @@ export function ResponsesView({
   const [school, setSchool] = useState("all");
   const [status, setStatus] = useState("all");
   const [selectedId, setSelectedId] = useState<string>("");
+  const [detailsOpen, setDetailsOpen] = useState(true);
 
   const filtered = useMemo(
     () =>
@@ -35,7 +37,7 @@ export function ResponsesView({
   const selected = filtered.find((response) => response.response_id === selectedId) ?? filtered[0] ?? null;
 
   return (
-    <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] overflow-hidden p-4">
+    <section className={`grid min-h-0 flex-1 overflow-hidden p-4 ${detailsOpen ? "grid-cols-[minmax(0,1fr)_360px]" : "grid-cols-1"}`}>
       <Card className="min-h-0 gap-0 py-0">
         <CardHeader className="border-b border-border py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -91,7 +93,10 @@ export function ResponsesView({
                   key={response.response_id}
                   data-state={selectedRow ? "selected" : undefined}
                   className="cursor-pointer"
-                  onClick={() => setSelectedId(response.response_id)}
+                  onClick={() => {
+                    setSelectedId(response.response_id);
+                    setDetailsOpen(true);
+                  }}
                 >
                   <TableCell className="font-mono text-[12px]">{response.response_id}</TableCell>
                   <TableCell className="font-medium">{response.entered_forename_raw || "Blank"}</TableCell>
@@ -107,22 +112,33 @@ export function ResponsesView({
           </Table>
         </CardContent>
       </Card>
-      <ResponseDetail response={selected} onLoadResponseDetail={onLoadResponseDetail} />
+      {detailsOpen ? (
+        <ResponseDetail
+          response={selected}
+          onClose={() => setDetailsOpen(false)}
+          onLoadResponseDetail={onLoadResponseDetail}
+        />
+      ) : null}
     </section>
   );
 }
 
 function ResponseDetail({
   response,
+  onClose,
   onLoadResponseDetail
 }: {
   response: ResponseRecord | null;
+  onClose: () => void;
   onLoadResponseDetail: (responseId: string) => Promise<ResponseDetailData | null>;
 }) {
   return (
     <aside className="ml-4 flex min-h-0 flex-col overflow-hidden rounded-md border border-line bg-panel text-[13px]">
-      <div className="border-b border-line p-4">
-        <div className="text-[15px] font-semibold">{response ? response.entered_forename_raw || response.response_id : "No response selected"}</div>
+      <div className="flex items-center justify-between gap-3 border-b border-line p-4">
+        <div className="min-w-0 truncate text-[15px] font-semibold">{response ? response.entered_forename_raw || response.response_id : "No response selected"}</div>
+        <Button variant="ghost" size="icon-sm" aria-label="Close details" title="Close details" onClick={onClose}>
+          <X size={15} />
+        </Button>
       </div>
       <div className="min-h-0 overflow-auto p-4">
         {response ? (
