@@ -78,7 +78,7 @@ export function MatchesView({
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 text-[13px] md:grid-cols-3 xl:grid-cols-6">
+          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(7.75rem,1fr))] gap-2 text-[13px]">
             <MatchCount label="Matched" value={stats.matched} active={status === "matched"} onClick={() => onStatusChange("matched")} />
             <MatchCount label="Deferred" value={stats.deferred} active={status === "deferred"} onClick={() => onStatusChange("deferred")} />
             <MatchCount label="Ambiguous" value={stats.ambiguous} active={status === "ambiguous"} onClick={() => onStatusChange("ambiguous")} />
@@ -145,9 +145,9 @@ export function MatchesView({
 
 function MatchCount({ label, value, active, onClick }: { label: string; value: number; active: boolean; onClick: () => void }) {
   return (
-    <Button variant={active ? "default" : "outline"} className="h-10 justify-between" onClick={onClick}>
-      <span>{label}</span>
-      <span className={active ? "text-primary-foreground/75" : "text-muted"}>{value}</span>
+    <Button variant={active ? "default" : "outline"} className="h-10 min-w-0 shrink justify-between gap-2 overflow-hidden" onClick={onClick}>
+      <span className="min-w-0 truncate">{label}</span>
+      <span className={`shrink-0 ${active ? "text-primary-foreground/75" : "text-muted"}`}>{value}</span>
     </Button>
   );
 }

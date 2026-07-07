@@ -205,17 +205,17 @@ function ReviewQueueSwitcher({
         <div className="text-[13px] font-medium">Review queues</div>
         <div className="text-[12px] text-muted">{stats.reviewable} reviewable responses</div>
       </div>
-      <div className="grid grid-cols-2 gap-2 p-2 xl:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2 p-2">
         {queues.map((item) => (
           <Button
             key={item.key}
             variant={queue === item.key ? "default" : "outline"}
-            className="h-10 justify-between px-3"
+            className="h-10 min-w-0 shrink justify-between gap-2 overflow-hidden px-3"
             aria-pressed={queue === item.key}
             onClick={() => onQueueChange(item.key)}
           >
-            <span>{item.label}</span>
-            <span className={queue === item.key ? "text-primary-foreground/75" : "text-muted"}>{item.value}</span>
+            <span className="min-w-0 truncate">{item.label}</span>
+            <span className={`shrink-0 ${queue === item.key ? "text-primary-foreground/75" : "text-muted"}`}>{item.value}</span>
           </Button>
         ))}
       </div>
@@ -239,18 +239,18 @@ function AddPupilForm({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   return (
-    <form className="mt-4 rounded-md border border-line bg-panel p-3 text-[13px]" onSubmit={onSubmit}>
-      <div className="mb-3 flex items-center justify-between">
+    <form className="mt-4 min-w-0 rounded-md border border-line bg-panel p-3 text-[13px]" onSubmit={onSubmit}>
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
         <div className="font-medium">Add roster pupil</div>
         <button type="button" className="focus-ring rounded-md p-1 text-muted hover:bg-[#f0eee8] hover:text-ink" onClick={onCancel}>
           <X size={15} />
         </button>
       </div>
       <div className="grid gap-2">
-        <label className="grid gap-1">
+        <label className="grid min-w-0 gap-1">
           <span className="text-[12px] text-muted">School</span>
           <input
-            className="h-9 rounded-md border border-line bg-background px-2"
+            className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
             list="school-options"
             value={form.schoolRaw}
             onChange={(event) => onChange({ schoolRaw: event.target.value })}
@@ -262,55 +262,55 @@ function AddPupilForm({
             <option key={school.school_raw} value={school.school_raw} />
           ))}
         </datalist>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="grid gap-1">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(8.75rem,1fr))] gap-2">
+          <label className="grid min-w-0 gap-1">
             <span className="text-[12px] text-muted">Forename</span>
             <input
-              className="h-9 rounded-md border border-line bg-background px-2"
+              className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
               value={form.forenameRaw}
               onChange={(event) => onChange({ forenameRaw: event.target.value })}
               required
             />
           </label>
-          <label className="grid gap-1">
+          <label className="grid min-w-0 gap-1">
             <span className="text-[12px] text-muted">Surname</span>
             <input
-              className="h-9 rounded-md border border-line bg-background px-2"
+              className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
               value={form.surnameRaw}
               onChange={(event) => onChange({ surnameRaw: event.target.value })}
               required
             />
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="grid gap-1">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(8.75rem,1fr))] gap-2">
+          <label className="grid min-w-0 gap-1">
             <span className="text-[12px] text-muted">DOB</span>
             <input
-              className="h-9 rounded-md border border-line bg-background px-2"
+              className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
               type="date"
               value={form.dobIso}
               onChange={(event) => onChange({ dobIso: event.target.value })}
             />
           </label>
-          <label className="grid gap-1">
+          <label className="grid min-w-0 gap-1">
             <span className="text-[12px] text-muted">Sex</span>
             <input
-              className="h-9 rounded-md border border-line bg-background px-2"
+              className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
               value={form.sex}
               onChange={(event) => onChange({ sex: event.target.value })}
             />
           </label>
         </div>
-        <label className="grid gap-1">
+        <label className="grid min-w-0 gap-1">
           <span className="text-[12px] text-muted">UPN</span>
           <input
-            className="h-9 rounded-md border border-line bg-background px-2"
+            className="h-9 min-w-0 rounded-md border border-line bg-background px-2"
             value={form.upn}
             onChange={(event) => onChange({ upn: event.target.value })}
           />
         </label>
       </div>
-      <div className="mt-3 flex justify-end gap-2">
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={saving}>{saving ? "Adding" : "Add pupil"}</Button>
       </div>
