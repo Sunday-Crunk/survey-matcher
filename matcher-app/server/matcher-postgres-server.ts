@@ -1213,33 +1213,33 @@ async function addRosterStudent(payload: AddRosterStudentPayload, context: Reque
   const now = new Date().toISOString();
   try {
     await transaction(async (client) => {
-    await run(
-      client,
-      `INSERT INTO roster_additions (
-        roster_child_id, school_raw, forename_raw, surname_raw, dob_iso,
-        birth_month, birth_year, sex, upn, created_at, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [rosterChildId, schoolRaw, forenameRaw, surnameRaw, dob.dobIso, dob.birthMonth, dob.birthYear, sex, upn, now, currentUserLabel(context.user)]
-    );
-    await insertRosterChild(client, {
-      rosterChildId,
-      rosterFile: "Manual addition",
-      schoolRaw,
-      sourceRow: 0,
-      forenameRaw,
-      surnameRaw,
-      dobIso: dob.dobIso,
-      birthMonth: dob.birthMonth,
-      birthYear: dob.birthYear
-    });
-    await recordAuditEvent(client, {
-      eventType: "roster_addition",
-      actor: currentUserLabel(context.user),
-      subject: `${forenameRaw} ${surnameRaw}`,
-      detail: `Roster pupil added to ${schoolRaw}`,
-      rosterChildId,
-      occurredAt: now
-    });
+      await insertRosterChild(client, {
+        rosterChildId,
+        rosterFile: "Manual addition",
+        schoolRaw,
+        sourceRow: 0,
+        forenameRaw,
+        surnameRaw,
+        dobIso: dob.dobIso,
+        birthMonth: dob.birthMonth,
+        birthYear: dob.birthYear
+      });
+      await run(
+        client,
+        `INSERT INTO roster_additions (
+          roster_child_id, school_raw, forename_raw, surname_raw, dob_iso,
+          birth_month, birth_year, sex, upn, created_at, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [rosterChildId, schoolRaw, forenameRaw, surnameRaw, dob.dobIso, dob.birthMonth, dob.birthYear, sex, upn, now, currentUserLabel(context.user)]
+      );
+      await recordAuditEvent(client, {
+        eventType: "roster_addition",
+        actor: currentUserLabel(context.user),
+        subject: `${forenameRaw} ${surnameRaw}`,
+        detail: `Roster pupil added to ${schoolRaw}`,
+        rosterChildId,
+        occurredAt: now
+      });
     });
   } catch (error) {
     if ((error as { code?: string }).code === "23505") {
