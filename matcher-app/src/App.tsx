@@ -204,7 +204,7 @@ export function App() {
   }, [matcher]);
 
   const loadNext = useCallback(
-    async (targetQueue = queue) => {
+    async (targetQueue: QueueName) => {
       const requestId = loadNextRequestRef.current + 1;
       loadNextRequestRef.current = requestId;
       setLoading(true);
@@ -228,7 +228,7 @@ export function App() {
       if (requestId !== loadNextRequestRef.current) return;
       setLoading(false);
     },
-    [matcher, queue, refreshStats]
+    [matcher, refreshStats]
   );
 
   const loadInitialData = useCallback(async () => {

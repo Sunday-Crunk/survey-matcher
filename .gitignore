@@ -41,6 +41,7 @@ ai structure help.docx
 # Logs and temporary files
 *.log
 *.pid
+*.jobid
 *.tmp
 *.bak
 __pycache__/
