@@ -1690,12 +1690,9 @@ function timestampForImport() {
 }
 
 async function runPythonScript(scriptName: string, args: string[]) {
-  const pythonCandidates = [
-    process.env.PYTHON,
-    path.join(os.homedir(), ".cache", "codex-runtimes", "codex-primary-runtime", "dependencies", "python", "python.exe"),
-    "python"
-  ].filter(Boolean) as string[];
-  const python = pythonCandidates.find((candidate) => candidate === "python" || fs.existsSync(candidate)) ?? "python";
+  const configuredPython = process.env.PYTHON?.trim();
+  const bundledPython = path.join(os.homedir(), ".cache", "codex-runtimes", "codex-primary-runtime", "dependencies", "python", "python.exe");
+  const python = configuredPython || (fs.existsSync(bundledPython) ? bundledPython : process.platform === "win32" ? "python" : "python3");
   const scriptPath = path.join(scriptsDir, scriptName);
   const { stdout, stderr } = await execFileAsync(python, [scriptPath, ...args], {
     cwd: workspaceRoot,
